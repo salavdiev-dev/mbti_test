@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBTI Pro Mobile</title>
+<style>
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #f1f5f9;
+    margin: 0;
+    padding: 16px;
+  }
+  h1, h2 {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .question {
+    background: rgba(30,41,59,0.85);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .scale label {
+    display: inline-block;
+    margin: 0 8px 8px 0;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .scale input[type=radio] {
+    display: none;
+  }
+  .scale input[type=radio]:checked + span {
+    background: #22c55e;
+    color: #0f172a;
+  }
+  button {
+    width: 100%;
+    padding: 18px;
+    font-size: 18px;
+    border: none;
+    border-radius: 16px;
+    background: #22c55e;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: 0.2s;
+  }
+  button:hover { background: #16a34a; }
+  #result {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(30,41,59,0.85);
+    border-radius: 16px;
+    font-size: 18px;
+    line-height: 1.6;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .bar {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    height: 14px;
+    margin: 10px 0 20px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: #22c55e;
+    transition: width 0.4s;
+  }
+  .hint { text-align:center; opacity:0.7; margin-bottom:16px; font-size:14px; }
+</style>
+</head>
+<body>
+<h1>MBTI Pro</h1>
+<p class="hint">80 утверждений · шкала 1–5 · адаптивный расчёт</p>
+<form id="test"></form>
+<button onclick="calculate()">Рассчитать тип личности</button>
+<div id="result"></div>
+<script>
+const questions = [
+// EI (20)
+['Мне легко заводить разговор первым', 'EI', +1],
+['Я чувствую подъём энергии среди людей', 'EI', +1],
+['Я быстро устаю от долгого общения', 'EI', -1],
+['Мне комфортнее размышлять в одиночку', 'EI', -1],
+['Я часто говорю, думая вслух', 'EI', +1],
+['Одиночество восстанавливает меня', 'EI', -1],
+['Мне нравится быть в центре внимания', 'EI', +1],
+['Я предпочитаю небольшие компании', 'EI', -1],
+['Я легко делюсь мыслями с другими', 'EI', +1],
+['Я редко рассказываю о себе первым', 'EI', -1],
+['Общение даёт мне заряд', 'EI', +1],
+['После людей мне нужно побыть одному', 'EI', -1],
+['Я часто инициирую встречи', 'EI', +1],
+['Мне проще писать, чем говорить', 'EI', -1],
+['Я быстро схожусь с новыми людьми', 'EI', +1],
+['Я берегу личное пространство', 'EI', -1],
+['Я люблю обсуждать идеи с другими', 'EI', +1],
+['Я держу эмоции внутри', 'EI', -1],
+['Я чувствую себя живым среди людей', 'EI', +1],
+['Тишина для меня важнее разговоров', 'EI', -1],
+
+// SN (20)
+['Я доверяю проверенному опыту', 'SN', +1],
+['Я часто думаю о будущем', 'SN', -1],
+['Мне важны факты и детали', 'SN', +1],
+['Я легко вижу скрытые смыслы', 'SN', -1],
+['Я предпочитаю конкретику', 'SN', +1],
+['Идеи важнее реализации', 'SN', -1],
+['Я замечаю то, что есть сейчас', 'SN', +1],
+['Я думаю о том, что может быть', 'SN', -1],
+['Практичность для меня ключевая', 'SN', +1],
+['Интуиция часто ведёт меня', 'SN', -1],
+['Мне важны инструкции', 'SN', +1],
+['Я люблю абстрактные темы', 'SN', -1],
+['Я ориентируюсь на реальность', 'SN', +1],
+['Мне интересны возможности', 'SN', -1],
+['Я предпочитаю факты фантазии', 'SN', +1],
+['Я легко вижу связи и паттерны', 'SN', -1],
+['Я живу настоящим', 'SN', +1],
+['Я мыслю образами и идеями', 'SN', -1],
+['Я ценю надёжность', 'SN', +1],
+['Меня тянет к новизне и смыслам', 'SN', -1],
+
+// TF (20)
+['Я принимаю решения логически', 'TF', +1],
+['Мне важно учитывать чувства', 'TF', -1],
+['Я могу быть жёстким ради результата', 'TF', +1],
+['Я избегаю ранить других', 'TF', -1],
+['Справедливость важнее сочувствия', 'TF', +1],
+['Гармония для меня приоритет', 'TF', -1],
+['Я спокойно воспринимаю критику', 'TF', +1],
+['Я переживаю из-за конфликтов', 'TF', -1],
+['Я разделяю эмоции и решения', 'TF', +1],
+['Чувства влияют на мой выбор', 'TF', -1],
+['Я ценю объективность', 'TF', +1],
+['Я эмпатичен к людям', 'TF', -1],
+['Я говорю прямо', 'TF', +1],
+['Мне важен такт', 'TF', -1],
+['Логика для меня основа', 'TF', +1],
+['Я чувствителен к атмосфере', 'TF', -1],
+['Я могу отключить эмоции', 'TF', +1],
+['Я сопереживаю глубоко', 'TF', -1],
+['Я анализирую холодно', 'TF', +1],
+['Мне важны человеческие отношения', 'TF', -1],
+
+// JP (20)
+['Я люблю чёткие планы', 'JP', +1],
+['Я легко меняю решения', 'JP', -1],
+['Мне важны дедлайны', 'JP', +1],
+['Я предпочитаю гибкость', 'JP', -1],
+['Порядок успокаивает меня', 'JP', +1],
+['Спонтанность делает жизнь живой', 'JP', -1],
+['Я довожу дела до конца', 'JP', +1],
+['Я часто импровизирую', 'JP', -1],
+['Я не люблю неопределённость', 'JP', +1],
+['Я оставляю варианты открытыми', 'JP', -1],
+['Я планирую заранее', 'JP', +1],
+['Мне сложно жить по графику', 'JP', -1],
+['Я люблю контроль', 'JP', +1],
+['Я действую по настроению', 'JP', -1],
+['Я ценю структуру', 'JP', +1],
+['Я легко отклоняюсь от плана', 'JP', -1],
+['Завершённость важна', 'JP', +1],
+['Мне тесно в рамках', 'JP', -1],
+['Я предпочитаю ясность', 'JP', +1],
+['Я живу процессом', 'JP', -1]
+];
+
+const form = document.getElementById('test');
+questions.forEach((q,i)=>{
+  form.innerHTML += `<div class="question"><p>${i+1}. ${q[0]}</p><div class="scale">${[1,2,3,4,5].map(v=>`<label><input type='radio' name='q${i}' value='${v}'><span>${v}</span></label>`).join('')}</div></div>`;
+});
+
+function calculate(){
+  const score={EI:0,SN:0,TF:0,JP:0};
+  const inputs=document.querySelectorAll('input[type=radio]:checked');
+  if(inputs.length<questions.length){alert('Ответь на все утверждения');return;}
+  inputs.forEach((el,i)=>{score[questions[i][1]]+=(Number(el.value)-3)*questions[i][2];});
+  const type=(score.EI>=0?'E':'I')+(score.SN>=0?'S':'N')+(score.TF>=0?'T':'F')+(score.JP>=0?'J':'P');
+  document.getElementById('result').innerHTML=`<h2>Тип личности: ${type}</h2>${['EI','SN','TF','JP'].map(axis=>`<p><strong>${axis}:</strong> ${score[axis]}</p><div class='bar'><div class='bar-fill' style='width:${Math.min(100,Math.abs(score[axis])*5)}%'></div></div>`).join('')}<p><em>Чем выше значение, тем устойчивее тип.</em></p>`;
+}
+</script>
+</body>
+</html>
